@@ -52,6 +52,7 @@ jobs:
         env:
             APP_ENV: test_cached
             DATABASE_URL: "mysql://root:root@127.0.0.1/sylius?charset=utf8mb4&serverVersion=8.0"
+            COMPOSER_IGNORE_PLATFORM_REQS: php
         steps:
             -   name: "Checkout (With Branch)"
                 if: "${{ inputs.branch != '' }}"
@@ -90,7 +91,7 @@ jobs:
                     key: ${{ github.run_id }}-${{ runner.os }}-${{ hashFiles('composer.json') }}-symfony-${{ matrix.symfony }}
 
             -   name: "Install dependencies"
-                run: composer update --no-interaction --no-scripts
+                run: composer install --no-interaction --no-scripts --prefer-dist --no-progress
 
 #            -   name: "Validate composer.json"
 #                run: composer validate --strict --no-check-version

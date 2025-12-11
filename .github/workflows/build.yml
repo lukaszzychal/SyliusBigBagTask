@@ -45,13 +45,14 @@ jobs:
         env:
             APP_ENV: test
             DATABASE_URL: "mysql://root:root@127.0.0.1:3306/sylius_test?charset=utf8mb4&serverVersion=8.0"
+            COMPOSER_IGNORE_PLATFORM_REQS: php
         steps:
             - uses: actions/checkout@v4
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
               with:
-                  php-version: '8.4'
+                  php-version: '8.3'
                   extensions: intl, gd, opcache, mysql, pdo_mysql
                   tools: composer
 
