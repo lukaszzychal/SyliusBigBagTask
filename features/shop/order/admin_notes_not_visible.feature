@@ -5,9 +5,10 @@ Feature: Admin notes are not visible in shop
   I should not be able to see admin notes in the shop
 
   Background:
-    Given there is a customer "customer@example.com"
-    And there is a product "Test Product" with code "TEST-PRODUCT"
-    And there is an order "#000001" placed by customer "customer@example.com" with product "Test Product"
+    Given the store operates on a single channel
+    Given there is a customer account "customer@example.com"
+    And the store has a product "Test Product" with code "TEST-PRODUCT"
+    And test order "000001" exists for "customer@example.com" with product "TEST-PRODUCT"
     And the order "#000001" has admin notes "Secret admin note"
 
   Scenario: Guest customer cannot see admin notes on order summary page

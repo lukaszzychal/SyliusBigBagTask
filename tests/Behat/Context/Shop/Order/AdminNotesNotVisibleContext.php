@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Behat\Context\Shop\Order;
 
 use Behat\Behat\Context\Context;
+use Behat\Mink\Session;
 use Sylius\Behat\Page\Shop\Order\ShowPageInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
@@ -41,10 +42,20 @@ final class AdminNotesNotVisibleContext implements Context
      */
     public function iShouldNotSee(string $text): void
     {
-        $session = $this->showPage->getSession();
+        $session = $this->getSession();
         $page = $session->getPage();
         $pageText = $page->getText();
         Assert::notContains($pageText, $text);
+    }
+
+    /**
+     * @Then I should not see :text text
+     */
+    public function iShouldNotSeeText(string $text): void
+    {
+        $session = $this->getSession();
+        $page = $session->getPage();
+        Assert::notContains($page->getText(), $text);
     }
 
     /**
@@ -52,16 +63,28 @@ final class AdminNotesNotVisibleContext implements Context
      */
     public function theFormShouldNotContainField(string $fieldName): void
     {
-        $session = $this->showPage->getSession();
+        $session = $this->getSession();
         $page = $session->getPage();
         $field = $page->findField($fieldName);
         Assert::null($field, sprintf('Field "%s" should not be present in shop forms', $fieldName));
     }
 
+    private function getSession(): Session
+    {
+        $reflection = new \ReflectionObject($this->showPage);
+        $method = $reflection->getMethod('getSession');
+        $method->setAccessible(true);
+
+        /** @var Session $session */
+        $session = $method->invoke($this->showPage);
+
+        return $session;
+    }
+
     private function findOrderByNumber(string $orderNumber): OrderInterface
     {
-        $orderNumber = ltrim($orderNumber, '#');
-        $order = $this->orderRepository->findOneByNumber($orderNumber);
+        $normalizedNumber = ltrim($orderNumber, '#');
+        $order = $this->orderRepository->findOneByNumber($normalizedNumber);
         Assert::notNull($order, sprintf('Order with number "%s" not found', $orderNumber));
 
         return $order;

@@ -20,11 +20,13 @@ default:
                 - sylius.behat.context.setup.order
                 - sylius.behat.context.setup.product
                 - sylius.behat.context.setup.taxonomy
+                - sylius.behat.context.setup.shop_security
 
                 - sylius.behat.context.ui.admin.managing_orders
                 - sylius.behat.context.ui.save
                 - App\Tests\Behat\Context\Admin\Order\AdminNotesContext
                 - App\Tests\Behat\Context\Order\OrderSetupContext
+                - App\Tests\Behat\Context\Shop\Order\AdminNotesNotVisibleContext
 
             paths:
                 - "features/admin/order/admin_notes.feature"

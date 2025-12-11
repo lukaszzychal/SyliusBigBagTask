@@ -41,7 +41,7 @@ class AdminOrderTypeExtension extends AbstractTypeExtension
                 'data-char-limit' => Order::MAX_NOTE_LENGTH,
             ],
         ];
-    }
+   }
 
     public static function getExtendedTypes(): iterable
     {

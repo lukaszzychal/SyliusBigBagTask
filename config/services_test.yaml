@@ -1,24 +1,61 @@
 imports:
     - { resource: "../vendor/sylius/sylius/src/Sylius/Behat/Resources/config/services.xml" }
 
-services:
-    Sylius\Behat\Page\Admin\Order\ShowPageInterface:
-        alias: sylius.behat.page.admin.order.show
-        public: true
-
-    Sylius\Behat\Page\Admin\Order\UpdatePageInterface:
-        alias: sylius.behat.page.admin.order.update
-        public: true
-
-    Sylius\Behat\Page\Shop\Order\ShowPageInterface:
-        alias: sylius.behat.page.shop.order.show
-        public: true
-
 when@test:
     services:
         App\Tests\Behat\Context\:
             resource: '%kernel.project_dir%/tests/Behat/Context/**'
             tags: ['behat.context']
+            autowire: true
+            autoconfigure: false
+
+        App\Tests\Behat\Context\Admin\Order\AdminNotesContext:
+            public: true
+            autowire: false
+            autoconfigure: false
+            tags: ['behat.context']
+            arguments:
+                $showPage: '@sylius.behat.page.admin.order.show'
+                $updatePage: '@sylius.behat.page.admin.order.update'
+                $orderRepository: '@sylius.repository.order'
+
+        App\Tests\Behat\Context\Order\OrderSetupContext:
+            public: true
+            autowire: false
+            autoconfigure: false
+            tags: ['behat.context']
+            arguments:
+                $orderRepository: '@sylius.repository.order'
+                $customerRepository: '@sylius.repository.customer'
+                $productRepository: '@sylius.repository.product'
+                $channelRepository: '@sylius.repository.channel'
+                $orderFactory: '@sylius.factory.order'
+                $orderItemFactory: '@sylius.factory.order_item'
+                $addressFactory: '@sylius.factory.address'
+                $countryRepository: '@sylius.repository.country'
+                $orderItemQuantityModifier: '@sylius.modifier.order_item_quantity'
+
+        App\Tests\Behat\Context\Shop\Order\AdminNotesNotVisibleContext:
+            public: true
+            autowire: false
+            autoconfigure: false
+            tags: ['behat.context']
+            arguments:
+                $showPage: '@sylius.behat.page.shop.order.show'
+                $orderRepository: '@sylius.repository.order'
+
+        App\Tests\Behat\Service\FakeJWTTokenManager:
+            public: true
+            autowire: true
+            autoconfigure: false
+
+        Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface:
+            alias: App\Tests\Behat\Service\FakeJWTTokenManager
+            public: true
+
+        lexik_jwt_authentication.jwt_manager:
+            alias: App\Tests\Behat\Service\FakeJWTTokenManager
+            public: true
         
         Sylius\Behat\Page\Admin\Order\ShowPageInterface:
             alias: sylius.behat.page.admin.order.show
@@ -37,6 +74,56 @@ when@test_cached:
         App\Tests\Behat\Context\:
             resource: '%kernel.project_dir%/tests/Behat/Context/**'
             tags: ['behat.context']
+            autowire: true
+            autoconfigure: false
+
+        App\Tests\Behat\Context\Admin\Order\AdminNotesContext:
+            public: true
+            autowire: false
+            autoconfigure: false
+            tags: ['behat.context']
+            arguments:
+                $showPage: '@sylius.behat.page.admin.order.show'
+                $updatePage: '@sylius.behat.page.admin.order.update'
+                $orderRepository: '@sylius.repository.order'
+
+        App\Tests\Behat\Context\Order\OrderSetupContext:
+            public: true
+            autowire: false
+            autoconfigure: false
+            tags: ['behat.context']
+            arguments:
+                $orderRepository: '@sylius.repository.order'
+                $customerRepository: '@sylius.repository.customer'
+                $productRepository: '@sylius.repository.product'
+                $channelRepository: '@sylius.repository.channel'
+                $orderFactory: '@sylius.factory.order'
+                $orderItemFactory: '@sylius.factory.order_item'
+                $addressFactory: '@sylius.factory.address'
+                $countryRepository: '@sylius.repository.country'
+                $orderItemQuantityModifier: '@sylius.modifier.order_item_quantity'
+
+        App\Tests\Behat\Context\Shop\Order\AdminNotesNotVisibleContext:
+            public: true
+            autowire: false
+            autoconfigure: false
+            tags: ['behat.context']
+            arguments:
+                $showPage: '@sylius.behat.page.shop.order.show'
+                $orderRepository: '@sylius.repository.order'
+
+        App\Tests\Behat\Service\FakeJWTTokenManager:
+            public: true
+            autowire: true
+            autoconfigure: false
+
+        Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface:
+            alias: App\Tests\Behat\Service\FakeJWTTokenManager
+            public: true
+
+        lexik_jwt_authentication.jwt_manager:
+            alias: App\Tests\Behat\Service\FakeJWTTokenManager
+            public: true
         
         Sylius\Behat\Page\Admin\Order\ShowPageInterface:
             alias: sylius.behat.page.admin.order.show

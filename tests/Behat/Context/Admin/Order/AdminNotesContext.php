@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Behat\Context\Admin\Order;
 
+use App\Entity\Order\Order as AppOrder;
 use Behat\Behat\Context\Context;
+use Behat\Mink\Session;
+use Behat\Mink\Element\DocumentElement;
+use Behat\Mink\Element\NodeElement;
 use Sylius\Behat\Page\Admin\Order\ShowPageInterface;
 use Sylius\Behat\Page\Admin\Order\UpdatePageInterface;
 use Sylius\Component\Core\Model\OrderInterface;
@@ -13,6 +17,8 @@ use Webmozart\Assert\Assert;
 
 final class AdminNotesContext implements Context
 {
+    private ?int $currentOrderId = null;
+
     public function __construct(
         private readonly ShowPageInterface $showPage,
         private readonly UpdatePageInterface $updatePage,
@@ -26,6 +32,7 @@ final class AdminNotesContext implements Context
     public function iAmOnTheOrderDetailsPage(string $orderNumber): void
     {
         $order = $this->findOrderByNumber($orderNumber);
+        $this->currentOrderId = (int) $order->getId();
         $this->showPage->open(['id' => $order->getId()]);
     }
 
@@ -46,7 +53,7 @@ final class AdminNotesContext implements Context
      */
     public function iShouldSeeTheAdminNotesSection(): void
     {
-        $session = $this->showPage->getSession();
+        $session = $this->getSessionFromPage($this->showPage);
         $page = $session->getPage();
         Assert::true($page->has('css', '[data-test-admin-notes]'));
     }
@@ -56,7 +63,7 @@ final class AdminNotesContext implements Context
      */
     public function theAdminNotesSectionShouldBeEmpty(): void
     {
-        $session = $this->showPage->getSession();
+        $session = $this->getSessionFromPage($this->showPage);
         $page = $session->getPage();
         $adminNotesElement = $page->find('css', '[data-test-admin-notes]');
         Assert::notNull($adminNotesElement);
@@ -69,11 +76,8 @@ final class AdminNotesContext implements Context
      */
     public function iClickButtonInAdminNotesSection(string $buttonText): void
     {
-        $session = $this->showPage->getSession();
-        $page = $session->getPage();
-        $link = $page->findLink($buttonText);
-        Assert::notNull($link);
-        $link->click();
+        Assert::notNull($this->currentOrderId, 'Order id not set, visit the order details page first.');
+        $this->updatePage->open(['id' => $this->currentOrderId]);
     }
 
     /**
@@ -81,9 +85,9 @@ final class AdminNotesContext implements Context
      */
     public function iFillInWith(string $field, string $value): void
     {
-        $session = $this->updatePage->getSession();
+        $session = $this->getSessionFromPage($this->updatePage);
         $page = $session->getPage();
-        $fieldElement = $page->findField($field);
+        $fieldElement = $this->findFieldElement($page, $field);
         Assert::notNull($fieldElement);
         $fieldElement->setValue($value);
     }
@@ -101,7 +105,7 @@ final class AdminNotesContext implements Context
      */
     public function iShouldSeeInAdminNotesSection(string $text): void
     {
-        $session = $this->showPage->getSession();
+        $session = $this->getSessionFromPage($this->showPage);
         $page = $session->getPage();
         $adminNotesElement = $page->find('css', '[data-test-admin-notes]');
         Assert::notNull($adminNotesElement);
@@ -113,9 +117,9 @@ final class AdminNotesContext implements Context
      */
     public function iClearTheField(string $field): void
     {
-        $session = $this->updatePage->getSession();
+        $session = $this->getSessionFromPage($this->updatePage);
         $page = $session->getPage();
-        $fieldElement = $page->findField($field);
+        $fieldElement = $this->findFieldElement($page, $field);
         Assert::notNull($fieldElement);
         $fieldElement->setValue('');
     }
@@ -126,9 +130,9 @@ final class AdminNotesContext implements Context
     public function iFillInWithAStringOfCharacters(string $field, int $length): void
     {
         $longString = str_repeat('a', $length);
-        $session = $this->updatePage->getSession();
+        $session = $this->getSessionFromPage($this->updatePage);
         $page = $session->getPage();
-        $fieldElement = $page->findField($field);
+        $fieldElement = $this->findFieldElement($page, $field);
         Assert::notNull($fieldElement);
         $fieldElement->setValue($longString);
     }
@@ -138,7 +142,7 @@ final class AdminNotesContext implements Context
      */
     public function iShouldSeeValidationError(string $message): void
     {
-        $session = $this->updatePage->getSession();
+        $session = $this->getSessionFromPage($this->updatePage);
         $page = $session->getPage();
         $errorText = $page->getText();
         Assert::contains($errorText, $message);
@@ -159,7 +163,7 @@ final class AdminNotesContext implements Context
      */
     public function theAdminNotesShouldBeTruncatedToCharacters(int $length): void
     {
-        $session = $this->showPage->getSession();
+        $session = $this->getSessionFromPage($this->showPage);
         $page = $session->getPage();
         $adminNotesElement = $page->find('css', '[data-test-admin-notes]');
         Assert::notNull($adminNotesElement);
@@ -169,11 +173,42 @@ final class AdminNotesContext implements Context
         Assert::length($noteText, $length);
     }
 
-    private function findOrderByNumber(string $orderNumber): OrderInterface
+    private function getSessionFromPage(object $page): Session
     {
-        $orderNumber = ltrim($orderNumber, '#');
-        $order = $this->orderRepository->findOneByNumber($orderNumber);
+        $reflection = new \ReflectionObject($page);
+        $method = $reflection->getMethod('getSession');
+        $method->setAccessible(true);
+
+        /** @var Session $session */
+        $session = $method->invoke($page);
+
+        return $session;
+    }
+
+    private function findFieldElement(DocumentElement $page, string $field): ?NodeElement
+    {
+        $fieldElement = $page->findField($field);
+        if (null !== $fieldElement) {
+            return $fieldElement;
+        }
+
+        if ($field === 'adminNotes') {
+            $fieldElement = $page->find('css', '[name="sylius_admin_order[adminNotes]"]');
+            if (null !== $fieldElement) {
+                return $fieldElement;
+            }
+        }
+
+        return $page->find('css', sprintf('[name="%s"]', $field));
+    }
+
+    private function findOrderByNumber(string $orderNumber): AppOrder
+    {
+        $normalizedNumber = ltrim($orderNumber, '#');
+        $order = $this->orderRepository->findOneByNumber($normalizedNumber);
         Assert::notNull($order, sprintf('Order with number "%s" not found', $orderNumber));
+
+        Assert::isInstanceOf($order, AppOrder::class);
 
         return $order;
     }
